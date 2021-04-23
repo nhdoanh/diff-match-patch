@@ -1,6 +1,7 @@
 # https://www.dartlang.org/tools/private-files.html
 
 pubspec.lock
+.dart_tool
 
 build/
 packages/
