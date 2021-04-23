@@ -37,8 +37,8 @@ import 'package:diff_match_patch/src/common.dart';
  *
  * Returns the best match index or -1.
  */
-int match(String text, String pattern, int loc,
-          {double threshold: 0.5, int distance: 1000}) {
+int match(String? text, String? pattern, int loc,
+    {double threshold: 0.5, int distance: 1000}) {
   // Check for null inputs.
   if (text == null || pattern == null) {
     throw new ArgumentError('Null inputs. (match_main)');
@@ -51,8 +51,8 @@ int match(String text, String pattern, int loc,
   } else if (text.length == 0) {
     // Nothing to match.
     return -1;
-  } else if (loc + pattern.length <= text.length
-      && text.substring(loc, loc + pattern.length) == pattern) {
+  } else if (loc + pattern.length <= text.length &&
+      text.substring(loc, loc + pattern.length) == pattern) {
     // Perfect match at the perfect spot!  (Includes case of null pattern)
     return loc;
   } else {
@@ -99,8 +99,8 @@ double _bitapScore(int e, int x, int loc, String pattern, int distance) {
  *
  * Returns the best match index or -1.
  */
-int matchBitap(String text, String pattern, int loc, double threshold,
-               int distance) {
+int matchBitap(
+    String text, String pattern, int loc, double threshold, int distance) {
   // Pattern too long for this application.
   assert(BITS_PER_INT == 0 || pattern.length <= BITS_PER_INT);
 
@@ -112,13 +112,13 @@ int matchBitap(String text, String pattern, int loc, double threshold,
   // Is there a nearby exact match? (speedup)
   int best_loc = text.indexOf(pattern, loc);
   if (best_loc != -1) {
-    score_threshold = min(_bitapScore(0, best_loc, loc, pattern, distance),
-        score_threshold);
+    score_threshold =
+        min(_bitapScore(0, best_loc, loc, pattern, distance), score_threshold);
     // What about in the other direction? (speedup)
     best_loc = text.lastIndexOf(pattern, loc + pattern.length);
     if (best_loc != -1) {
-      score_threshold = min(_bitapScore(0, best_loc, loc, pattern, distance),
-          score_threshold);
+      score_threshold = min(
+          _bitapScore(0, best_loc, loc, pattern, distance), score_threshold);
     }
   }
 
@@ -128,7 +128,7 @@ int matchBitap(String text, String pattern, int loc, double threshold,
 
   int bin_min, bin_mid;
   int bin_max = pattern.length + text.length;
-  List<int> last_rd;
+  late List<int?> last_rd;
   for (int d = 0; d < pattern.length; d++) {
     // Scan for the best match; each iteration allows for one more error.
     // Run a binary search to determine how far from 'loc' we can stray at
@@ -136,8 +136,8 @@ int matchBitap(String text, String pattern, int loc, double threshold,
     bin_min = 0;
     bin_mid = bin_max;
     while (bin_min < bin_mid) {
-      if (_bitapScore(d, loc + bin_mid, loc, pattern, distance)
-          <= score_threshold) {
+      if (_bitapScore(d, loc + bin_mid, loc, pattern, distance) <=
+          score_threshold) {
         bin_min = bin_mid;
       } else {
         bin_max = bin_mid;
@@ -149,10 +149,10 @@ int matchBitap(String text, String pattern, int loc, double threshold,
     int start = max(1, loc - bin_mid + 1);
     int finish = min(loc + bin_mid, text.length) + pattern.length;
 
-    final rd = new List<int>(finish + 2);
+    final List<int?> rd = []..length = finish + 2;
     rd[finish + 1] = (1 << d) - 1;
     for (int j = finish; j >= start; j--) {
-      int charMatch;
+      int? charMatch;
       if (text.length <= j - 1 || !s.containsKey(text[j - 1])) {
         // Out of range.
         charMatch = 0;
@@ -161,13 +161,14 @@ int matchBitap(String text, String pattern, int loc, double threshold,
       }
       if (d == 0) {
         // First pass: exact match.
-        rd[j] = ((rd[j + 1] << 1) | 1) & charMatch;
+        rd[j] = ((rd[j + 1]! << 1) | 1) & charMatch!;
       } else {
         // Subsequent passes: fuzzy match.
-        rd[j] = ((rd[j + 1] << 1) | 1) & charMatch
-            | (((last_rd[j + 1] | last_rd[j]) << 1) | 1) | last_rd[j + 1];
+        rd[j] = ((rd[j + 1]! << 1) | 1) & charMatch! |
+            (((last_rd[j + 1]! | last_rd[j]!) << 1) | 1) |
+            last_rd[j + 1]!;
       }
-      if ((rd[j] & match_mask) != 0) {
+      if ((rd[j]! & match_mask) != 0) {
         double score = _bitapScore(d, j - 1, loc, pattern, distance);
         // This match will almost certainly be better than any existing
         // match.  But check anyway.
@@ -206,7 +207,7 @@ Map<String, int> matchAlphabet(String pattern) {
     s[pattern[i]] = 0;
   }
   for (int i = 0; i < pattern.length; i++) {
-    s[pattern[i]] = s[pattern[i]] | (1 << (pattern.length - i - 1));
+    s[pattern[i]] = s[pattern[i]]! | (1 << (pattern.length - i - 1));
   }
   return s;
 }

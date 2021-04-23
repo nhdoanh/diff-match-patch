@@ -36,9 +36,8 @@ part of diff;
  *
  * Returns a List of Diff objects.
  */
-List<Diff> diff(String text1, String text2,
-                {double timeout: 1.0, bool checklines: true,
-                 DateTime deadline}) {
+List<Diff> diff(String? text1, String? text2,
+    {double timeout: 1.0, bool checklines: true, DateTime? deadline}) {
   // Set a deadline by which time the diff must be complete.
   if (deadline == null) {
     deadline = new DateTime.now();
@@ -46,8 +45,8 @@ List<Diff> diff(String text1, String text2,
       // One year should be sufficient for 'infinity'.
       deadline = deadline.add(new Duration(days: 365));
     } else {
-      deadline = deadline.add(new Duration(
-          milliseconds: (timeout * 1000).toInt()));
+      deadline =
+          deadline.add(new Duration(milliseconds: (timeout * 1000).toInt()));
     }
   }
   // Check for null inputs.
@@ -107,9 +106,8 @@ List<Diff> diff(String text1, String text2,
  *
  * Returns a List of Diff objects.
  */
-List<Diff> _diffCompute(String text1, String text2,
-                        double timeout, bool checklines,
-                        DateTime deadline) {
+List<Diff> _diffCompute(String text1, String text2, double timeout,
+    bool checklines, DateTime? deadline) {
   List<Diff> diffs = <Diff>[];
 
   if (text1.length == 0) {
@@ -129,8 +127,7 @@ List<Diff> _diffCompute(String text1, String text2,
   int i = longtext.indexOf(shorttext);
   if (i != -1) {
     // Shorter text is inside the longer text (speedup).
-    int op = (text1.length > text2.length) ?
-                   DIFF_DELETE : DIFF_INSERT;
+    int op = (text1.length > text2.length) ? DIFF_DELETE : DIFF_INSERT;
     diffs.add(new Diff(op, longtext.substring(0, i)));
     diffs.add(new Diff(DIFF_EQUAL, shorttext));
     diffs.add(new Diff(op, longtext.substring(i + shorttext.length)));
@@ -156,13 +153,9 @@ List<Diff> _diffCompute(String text1, String text2,
     final mid_common = hm[4];
     // Send both pairs off for separate processing.
     final diffs_a = diff(text1_a, text2_a,
-                         timeout: timeout,
-                         checklines: checklines,
-                         deadline: deadline);
+        timeout: timeout, checklines: checklines, deadline: deadline);
     final diffs_b = diff(text1_b, text2_b,
-                         timeout: timeout,
-                         checklines: checklines,
-                         deadline: deadline);
+        timeout: timeout, checklines: checklines, deadline: deadline);
     // Merge the results.
     diffs = diffs_a;
     diffs.add(new Diff(DIFF_EQUAL, mid_common));
@@ -190,18 +183,16 @@ List<Diff> _diffCompute(String text1, String text2,
  *
  * Returns a List of Diff objects.
  */
-List<Diff> _diffLineMode(String text1, String text2, double timeout,
-                         DateTime deadline) {
+List<Diff> _diffLineMode(
+    String text1, String text2, double timeout, DateTime? deadline) {
   // Scan the text on a line-by-line basis first.
   final a = linesToChars(text1, text2);
   text1 = a['chars1'] as String;
   text2 = a['chars2'] as String;
-  final List<String> linearray = a['lineArray'] as List<String>;
+  final List<String>? linearray = a['lineArray'] as List<String>?;
 
   final diffs = diff(text1, text2,
-                     timeout: timeout,
-                     checklines: false,
-                     deadline: deadline);
+      timeout: timeout, checklines: false, deadline: deadline);
 
   // Convert the diff back to original text.
   charsToLines(diffs, linearray);
@@ -218,38 +209,36 @@ List<Diff> _diffLineMode(String text1, String text2, double timeout,
   final text_insert = new StringBuffer();
   while (pointer < diffs.length) {
     switch (diffs[pointer].operation) {
-    case DIFF_INSERT:
-      count_insert++;
-      text_insert.write(diffs[pointer].text);
-      break;
-    case DIFF_DELETE:
-      count_delete++;
-      text_delete.write(diffs[pointer].text);
-      break;
-    case DIFF_EQUAL:
-      // Upon reaching an equality, check for prior redundancies.
-      if (count_delete >= 1 && count_insert >= 1) {
-        // Delete the offending records and add the merged ones.
-        diffs.removeRange(pointer - count_delete - count_insert, pointer);
-        pointer = pointer - count_delete - count_insert;
-        final a = diff(text_delete.toString(), text_insert.toString(),
-                       timeout: timeout,
-                       checklines: false,
-                       deadline: deadline);
-        for (int j = a.length - 1; j >= 0; j--) {
-          diffs.insert(pointer, a[j]);
+      case DIFF_INSERT:
+        count_insert++;
+        text_insert.write(diffs[pointer].text);
+        break;
+      case DIFF_DELETE:
+        count_delete++;
+        text_delete.write(diffs[pointer].text);
+        break;
+      case DIFF_EQUAL:
+        // Upon reaching an equality, check for prior redundancies.
+        if (count_delete >= 1 && count_insert >= 1) {
+          // Delete the offending records and add the merged ones.
+          diffs.removeRange(pointer - count_delete - count_insert, pointer);
+          pointer = pointer - count_delete - count_insert;
+          final a = diff(text_delete.toString(), text_insert.toString(),
+              timeout: timeout, checklines: false, deadline: deadline);
+          for (int j = a.length - 1; j >= 0; j--) {
+            diffs.insert(pointer, a[j]);
+          }
+          pointer = pointer + a.length;
         }
-        pointer = pointer + a.length;
-      }
-      count_insert = 0;
-      count_delete = 0;
-      text_delete.clear();
-      text_insert.clear();
-      break;
+        count_insert = 0;
+        count_delete = 0;
+        text_delete.clear();
+        text_insert.clear();
+        break;
     }
     pointer++;
   }
-  diffs.removeLast();  // Remove the dummy entry at the end.
+  diffs.removeLast(); // Remove the dummy entry at the end.
 
   return diffs;
 }
@@ -268,16 +257,16 @@ List<Diff> _diffLineMode(String text1, String text2, double timeout,
  *
  * Returns a List of Diff objects.
  */
-List<Diff> diffBisect(String text1, String text2, double timeout,
-                      DateTime deadline) {
+List<Diff> diffBisect(
+    String text1, String text2, double timeout, DateTime? deadline) {
   // Cache the text lengths to prevent multiple calls.
   final text1_length = text1.length;
   final text2_length = text2.length;
   final max_d = (text1_length + text2_length + 1) ~/ 2;
   final v_offset = max_d;
   final v_length = 2 * max_d;
-  final v1 = new List<int>(v_length);
-  final v2 = new List<int>(v_length);
+  final List<int?> v1 = []..length = (v_length);
+  final List<int?> v2 = []..length = (v_length);
   for (int x = 0; x < v_length; x++) {
     v1[x] = -1;
     v2[x] = -1;
@@ -296,22 +285,22 @@ List<Diff> diffBisect(String text1, String text2, double timeout,
   int k2end = 0;
   for (int d = 0; d < max_d; d++) {
     // Bail out if deadline is reached.
-    if ((new DateTime.now()).compareTo(deadline) == 1) {
+    if ((new DateTime.now()).compareTo(deadline!) == 1) {
       break;
     }
 
     // Walk the front path one step.
     for (int k1 = -d + k1start; k1 <= d - k1end; k1 += 2) {
       int k1_offset = v_offset + k1;
-      int x1;
-      if (k1 == -d || k1 != d && v1[k1_offset - 1] < v1[k1_offset + 1]) {
+      int? x1;
+      if (k1 == -d || k1 != d && v1[k1_offset - 1]! < v1[k1_offset + 1]!) {
         x1 = v1[k1_offset + 1];
       } else {
-        x1 = v1[k1_offset - 1] + 1;
+        x1 = v1[k1_offset - 1]! + 1;
       }
-      int y1 = x1 - k1;
-      while (x1 < text1_length && y1 < text2_length
-             && text1[x1] == text2[y1]) {
+      int y1 = x1! - k1;
+      while (
+          x1! < text1_length && y1 < text2_length && text1[x1] == text2[y1]) {
         x1++;
         y1++;
       }
@@ -326,7 +315,7 @@ List<Diff> diffBisect(String text1, String text2, double timeout,
         int k2_offset = v_offset + delta - k1;
         if (k2_offset >= 0 && k2_offset < v_length && v2[k2_offset] != -1) {
           // Mirror x2 onto top-left coordinate system.
-          int x2 = text1_length - v2[k2_offset];
+          int x2 = text1_length - v2[k2_offset]!;
           if (x1 >= x2) {
             // Overlap detected.
             return _diffBisectSplit(text1, text2, x1, y1, timeout, deadline);
@@ -338,16 +327,16 @@ List<Diff> diffBisect(String text1, String text2, double timeout,
     // Walk the reverse path one step.
     for (int k2 = -d + k2start; k2 <= d - k2end; k2 += 2) {
       int k2_offset = v_offset + k2;
-      int x2;
-      if (k2 == -d || k2 != d && v2[k2_offset - 1] < v2[k2_offset + 1]) {
+      int? x2;
+      if (k2 == -d || k2 != d && v2[k2_offset - 1]! < v2[k2_offset + 1]!) {
         x2 = v2[k2_offset + 1];
       } else {
-        x2 = v2[k2_offset - 1] + 1;
+        x2 = v2[k2_offset - 1]! + 1;
       }
-      int y2 = x2 - k2;
-      while (x2 < text1_length && y2 < text2_length
-             && text1[text1_length - x2 - 1]
-             == text2[text2_length - y2 - 1]) {
+      int y2 = x2! - k2;
+      while (x2! < text1_length &&
+          y2 < text2_length &&
+          text1[text1_length - x2 - 1] == text2[text2_length - y2 - 1]) {
         x2++;
         y2++;
       }
@@ -361,7 +350,7 @@ List<Diff> diffBisect(String text1, String text2, double timeout,
       } else if (!front) {
         int k1_offset = v_offset + delta - k2;
         if (k1_offset >= 0 && k1_offset < v_length && v1[k1_offset] != -1) {
-          int x1 = v1[k1_offset];
+          int x1 = v1[k1_offset]!;
           int y1 = v_offset + x1 - k1_offset;
           // Mirror x2 onto top-left coordinate system.
           x2 = text1_length - x2;
@@ -392,8 +381,8 @@ List<Diff> diffBisect(String text1, String text2, double timeout,
  *
  * Returns a List of Diff objects.
  */
-List<Diff> _diffBisectSplit(String text1, String text2,
-                            int x, int y, double timeout, DateTime deadline) {
+List<Diff> _diffBisectSplit(String text1, String text2, int x, int y,
+    double timeout, DateTime? deadline) {
   final text1a = text1.substring(0, x);
   final text2a = text2.substring(0, y);
   final text1b = text1.substring(x);
@@ -401,13 +390,9 @@ List<Diff> _diffBisectSplit(String text1, String text2,
 
   // Compute both diffs serially.
   final diffs = diff(text1a, text2a,
-                     timeout: timeout,
-                     checklines: false,
-                     deadline: deadline);
+      timeout: timeout, checklines: false, deadline: deadline);
   final diffsb = diff(text1b, text2b,
-                      timeout: timeout,
-                      checklines: false,
-                      deadline: deadline);
+      timeout: timeout, checklines: false, deadline: deadline);
 
   diffs.addAll(diffsb);
   return diffs;

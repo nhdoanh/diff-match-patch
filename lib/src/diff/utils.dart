@@ -30,8 +30,8 @@ part of diff;
  *
  * Returns an encoded string.
  */
-String _linesToCharsMunge(String text, List<String> lineArray,
-                          Map<String, int> lineHash) {
+String _linesToCharsMunge(
+    String text, List<String> lineArray, Map<String, int> lineHash) {
   int lineStart = 0;
   int lineEnd = -1;
   String line;
@@ -48,7 +48,7 @@ String _linesToCharsMunge(String text, List<String> lineArray,
     lineStart = lineEnd + 1;
 
     if (lineHash.containsKey(line)) {
-      chars.write(new String.fromCharCodes([lineHash[line]]));
+      chars.write(new String.fromCharCodes([lineHash[line]!]));
     } else {
       lineArray.add(line);
       lineHash[line] = lineArray.length - 1;
@@ -81,7 +81,11 @@ Map<String, dynamic> linesToChars(String text1, String text2) {
 
   String chars1 = _linesToCharsMunge(text1, lineArray, lineHash);
   String chars2 = _linesToCharsMunge(text2, lineArray, lineHash);
-  return <String, dynamic>{'chars1': chars1, 'chars2': chars2, 'lineArray': lineArray};
+  return <String, dynamic>{
+    'chars1': chars1,
+    'chars2': chars2,
+    'lineArray': lineArray
+  };
 }
 
 /**
@@ -91,11 +95,11 @@ Map<String, dynamic> linesToChars(String text1, String text2) {
  * * [diffs] is a List of Diff objects.
  * * [lineArray] is a List of unique strings.
  */
-void charsToLines(List<Diff> diffs, List<String> lineArray) {
+void charsToLines(List<Diff> diffs, List<String>? lineArray) {
   final text = new StringBuffer();
   for (Diff diff in diffs) {
-    for (int y = 0; y < diff.text.length; y++) {
-      text.write(lineArray[diff.text.codeUnitAt(y)]);
+    for (int y = 0; y < diff.text!.length; y++) {
+      text.write(lineArray![diff.text!.codeUnitAt(y)]);
     }
     diff.text = text.toString();
     text.clear();
@@ -155,7 +159,7 @@ int commonSuffix(String text1, String text2) {
  * Returns the number of characters common to the end of the first
  * string and the start of the second string.
  */
- int commonOverlap(String text1, String text2) {
+int commonOverlap(String text1, String text2) {
   // Eliminate the null case.
   if (text1.isEmpty || text2.isEmpty) {
     return 0;
@@ -209,21 +213,21 @@ int levenshtein(List<Diff> diffs) {
   int deletions = 0;
   for (Diff aDiff in diffs) {
     switch (aDiff.operation) {
-    case DIFF_INSERT:
-      insertions += aDiff.text.length;
-      break;
-    case DIFF_DELETE:
-      deletions += aDiff.text.length;
-      break;
-    case DIFF_EQUAL:
-      // A deletion and an insertion is one substitution.
-      levenshtein += max(insertions, deletions);
-      insertions = 0;
-      deletions = 0;
-      break;
+      case DIFF_INSERT:
+        insertions += aDiff.text!.length;
+        break;
+      case DIFF_DELETE:
+        deletions += aDiff.text!.length;
+        break;
+      case DIFF_EQUAL:
+        // A deletion and an insertion is one substitution.
+        levenshtein += max<int>(insertions, deletions);
+        insertions = 0;
+        deletions = 0;
+        break;
     }
   }
-  levenshtein += max(insertions, deletions);
+  levenshtein += max<int>(insertions, deletions);
   return levenshtein;
 }
 
@@ -243,15 +247,15 @@ int diffXIndex(List<Diff> diffs, int loc) {
   int chars2 = 0;
   int last_chars1 = 0;
   int last_chars2 = 0;
-  Diff lastDiff = null;
+  Diff? lastDiff = null;
   for (Diff aDiff in diffs) {
     if (aDiff.operation != DIFF_INSERT) {
       // Equality or deletion.
-      chars1 += aDiff.text.length;
+      chars1 += aDiff.text!.length;
     }
     if (aDiff.operation != DIFF_DELETE) {
       // Equality or insertion.
-      chars2 += aDiff.text.length;
+      chars2 += aDiff.text!.length;
     }
     if (chars1 > loc) {
       // Overshot the location.

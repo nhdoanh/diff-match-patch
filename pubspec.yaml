@@ -8,7 +8,7 @@ description: The Diff Match and Patch libraries offer robust algorithms to perfo
 homepage: http://github.com/jheyne/diff-match-patch
 
 environment:
-  sdk: '>=2.0.0 <3.0.0'
+  sdk: '>=2.12.0 <3.0.0'
 
 dev_dependencies:
-  test: any
+  test: ^1.17.1
